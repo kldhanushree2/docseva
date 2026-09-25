@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../services/firestore_service.dart';
 import '../../models/application_model.dart';
+import '../../core/theme/app_theme.dart';
 
 class OfficialServiceInfo {
   final String serviceName;
@@ -360,7 +361,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
                             const SizedBox(height: 8),
                             Text(
                               sourceText,
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green[800]),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryDark),
                             ),
                             const SizedBox(height: 8),
                             Container(
@@ -392,7 +393,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
                                     icon: const Icon(Icons.open_in_new, size: 18),
                                     label: const Text('Open Official Website'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green[700],
+                                      backgroundColor: AppTheme.secondaryDark,
                                       foregroundColor: Colors.white,
                                     ),
                                   ),

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
+import '../../core/theme/app_theme.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -205,10 +206,10 @@ class _ProfileTabState extends State<ProfileTab> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.green[100],
+                  backgroundColor: AppTheme.secondaryLightest,
                   child: Text(
                     displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.green),
+                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -251,7 +252,7 @@ class _ProfileTabState extends State<ProfileTab> {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          Icon(icon, color: Colors.green),
+          Icon(icon, color: AppTheme.secondaryColor),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

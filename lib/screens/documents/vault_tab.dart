@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../services/firestore_service.dart';
 import '../../models/vault_model.dart';
+import '../../core/theme/app_theme.dart';
 
 class VaultTab extends StatelessWidget {
   const VaultTab({super.key});
@@ -92,7 +93,7 @@ class VaultTab extends StatelessWidget {
                         selectedFile != null
                             ? (selectedFileType == 'PDF' ? Icons.picture_as_pdf : Icons.image)
                             : Icons.attach_file,
-                        color: selectedFile != null ? Colors.green : Colors.blue,
+                        color: selectedFile != null ? AppTheme.secondaryColor : AppTheme.primaryColor,
                       ),
                       label: Text(
                         selectedFile != null
@@ -103,7 +104,7 @@ class VaultTab extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                         side: BorderSide(
-                          color: selectedFile != null ? Colors.green : Colors.grey,
+                          color: selectedFile != null ? AppTheme.secondaryColor : Colors.grey,
                         ),
                       ),
                     ),
@@ -271,7 +272,7 @@ class VaultTab extends StatelessWidget {
                   errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
                 ),
               ] else ...[
-                const Icon(Icons.image, size: 80, color: Colors.blue),
+                const Icon(Icons.image, size: 80, color: AppTheme.primaryColor),
               ],
               const SizedBox(height: 12),
               ListTile(
@@ -378,7 +379,7 @@ class VaultTab extends StatelessWidget {
                         )
                       : Icon(
                           isPdf ? Icons.picture_as_pdf : Icons.image,
-                          color: isPdf ? Colors.red : Colors.blue,
+                          color: isPdf ? Colors.red : AppTheme.primaryColor,
                           size: 36,
                         ),
                   title: Text(doc.documentName, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -387,7 +388,7 @@ class VaultTab extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.remove_red_eye, color: Colors.green),
+                        icon: const Icon(Icons.remove_red_eye, color: AppTheme.secondaryColor),
                         tooltip: 'View Document',
                         onPressed: () => _openDocumentViewer(context, doc),
                       ),
@@ -544,16 +545,16 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
               ? Column(
                   children: [
                     Container(
-                      color: Colors.blue[50],
+                      color: AppTheme.primaryLightest,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline, size: 20, color: Colors.blue),
+                          const Icon(Icons.info_outline, size: 20, color: AppTheme.primaryColor),
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
                               'Viewing PDF. You can also open it directly in Chrome viewer.',
-                              style: TextStyle(fontSize: 12, color: Colors.blue),
+                              style: TextStyle(fontSize: 12, color: AppTheme.primaryColor),
                             ),
                           ),
                           TextButton.icon(

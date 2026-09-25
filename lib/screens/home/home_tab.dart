@@ -8,6 +8,7 @@ import '../../models/application_model.dart';
 import '../applications/tracker_screen.dart';
 import '../reminders/reminders_screen.dart';
 import 'ai_assistant_screen.dart';
+import '../../core/theme/app_theme.dart';
 
 class HomeTab extends StatelessWidget {
   final Function(int)? onSelectTab;
@@ -20,7 +21,28 @@ class HomeTab extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DocSeva'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 28,
+              height: 28,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.description, size: 24, color: AppTheme.primaryColor),
+            ),
+            const SizedBox(width: 8),
+            RichText(
+              text: const TextSpan(
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                children: [
+                  TextSpan(text: 'Doc', style: TextStyle(color: AppTheme.primaryColor)),
+                  TextSpan(text: 'Seva', style: TextStyle(color: AppTheme.secondaryColor)),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AIAssistantScreen())),
@@ -76,7 +98,7 @@ class HomeTab extends StatelessWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildActionCard(context, 'Gov Services', Icons.description, Colors.blue, () {
+        _buildActionCard(context, 'Gov Services', Icons.description, AppTheme.primaryColor, () {
           if (onSelectTab != null) {
             onSelectTab!(1);
           }
@@ -84,12 +106,12 @@ class HomeTab extends StatelessWidget {
         _buildActionCard(context, 'Track Status', Icons.track_changes, Colors.orange, () {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen()));
         }),
-        _buildActionCard(context, 'Doc Vault', Icons.lock, Colors.green, () {
+        _buildActionCard(context, 'Doc Vault', Icons.lock, AppTheme.secondaryColor, () {
           if (onSelectTab != null) {
             onSelectTab!(2);
           }
         }),
-        _buildActionCard(context, 'Reminders', Icons.alarm, Colors.purple, () {
+        _buildActionCard(context, 'Reminders', Icons.alarm, AppTheme.primaryDark, () {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
         }),
       ],

@@ -4,6 +4,7 @@ import '../../services/ai_service.dart';
 import '../../models/chat_message_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/theme/app_theme.dart';
 
 class AIAssistantScreen extends StatefulWidget {
   const AIAssistantScreen({super.key});
@@ -88,7 +89,22 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Assistant')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 28,
+              height: 28,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.smart_toy_outlined, size: 24, color: AppTheme.primaryColor),
+            ),
+            const SizedBox(width: 8),
+            const Text('AI Assistant'),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -105,7 +121,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isAI ? Colors.grey[200] : Colors.green[100],
+                      color: isAI ? Colors.grey[200] : AppTheme.secondaryLightest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
@@ -126,7 +142,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                               Icon(
                                 msg.isLive! ? Icons.bolt : Icons.menu_book,
                                 size: 12,
-                                color: msg.isLive! ? Colors.green[700] : Colors.grey[600],
+                                color: msg.isLive! ? AppTheme.secondaryDark : Colors.grey[600],
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -134,7 +150,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontStyle: FontStyle.italic,
-                                  color: msg.isLive! ? Colors.green[700] : Colors.grey[600],
+                                  color: msg.isLive! ? AppTheme.secondaryDark : Colors.grey[600],
                                 ),
                               ),
                             ],
@@ -164,7 +180,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send, color: Colors.green),
+                  icon: const Icon(Icons.send, color: AppTheme.secondaryColor),
                   onPressed: () => _sendMessage(_controller.text),
                 ),
               ],

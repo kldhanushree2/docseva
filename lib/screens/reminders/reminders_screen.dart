@@ -6,6 +6,7 @@ import '../../services/firestore_service.dart';
 import '../../services/notification_service.dart';
 import '../../models/reminder_model.dart';
 import 'package:intl/intl.dart';
+import '../../core/theme/app_theme.dart';
 
 class RemindersScreen extends StatelessWidget {
   const RemindersScreen({super.key});
@@ -72,13 +73,13 @@ class RemindersScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: AppTheme.primaryLightest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
                           Icon(kIsWeb ? Icons.info_outline : Icons.notifications_active_outlined,
-                              size: 18, color: Colors.blue[800]),
+                              size: 18, color: AppTheme.primaryDark),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -87,7 +88,7 @@ class RemindersScreen extends StatelessWidget {
                                   : 'A notification will alert you on this device at 9:00 AM on '
                                       '${DateFormat('dd MMM yyyy').format(selectedDate.subtract(const Duration(days: 1)))} '
                                       '(1 day before the due date).',
-                              style: TextStyle(fontSize: 12, color: Colors.blue[900]),
+                              style: TextStyle(fontSize: 12, color: AppTheme.primaryDark),
                             ),
                           ),
                         ],
@@ -268,7 +269,7 @@ class RemindersScreen extends StatelessWidget {
     switch (priority.toLowerCase()) {
       case 'high': return Colors.red;
       case 'medium': return Colors.orange;
-      default: return Colors.blue;
+      default: return AppTheme.primaryColor;
     }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/gov_service_model.dart';
+import '../../core/theme/app_theme.dart';
 
 class ServiceDetailScreen extends StatelessWidget {
   final GovServiceModel service;
@@ -61,10 +62,10 @@ class ServiceDetailScreen extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: service.onlineApplicable ? Colors.green[50] : Colors.orange[50],
+                color: service.onlineApplicable ? AppTheme.secondaryLightest : Colors.orange[50],
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: service.onlineApplicable ? Colors.green[200]! : Colors.orange[200]!,
+                  color: service.onlineApplicable ? AppTheme.secondaryLight : Colors.orange[200]!,
                 ),
               ),
               child: Row(
@@ -72,7 +73,7 @@ class ServiceDetailScreen extends StatelessWidget {
                 children: [
                   Icon(
                     service.onlineApplicable ? Icons.check_circle : Icons.info,
-                    color: service.onlineApplicable ? Colors.green[700] : Colors.orange[800],
+                    color: service.onlineApplicable ? AppTheme.secondaryDark : Colors.orange[800],
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -85,7 +86,7 @@ class ServiceDetailScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: service.onlineApplicable ? Colors.green[800] : Colors.orange[900],
+                            color: service.onlineApplicable ? AppTheme.secondaryDark : Colors.orange[900],
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -107,13 +108,13 @@ class ServiceDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green[50],
+                color: AppTheme.secondaryLightest,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green[200]!),
+                border: Border.all(color: AppTheme.secondaryLight),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified, color: Colors.green, size: 20),
+                  const Icon(Icons.verified, color: AppTheme.secondaryColor, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -121,7 +122,7 @@ class ServiceDetailScreen extends StatelessWidget {
                       children: [
                         const Text(
                           'Verified Official Government Portal:',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryDark),
                         ),
                         SelectableText(
                           service.officialWebsite,
@@ -131,7 +132,7 @@ class ServiceDetailScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 18, color: Colors.green),
+                    icon: const Icon(Icons.copy, size: 18, color: AppTheme.secondaryColor),
                     tooltip: 'Copy URL',
                     onPressed: () => _copyToClipboard(context),
                   ),
@@ -147,7 +148,7 @@ class ServiceDetailScreen extends StatelessWidget {
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('Open Official Website', style: TextStyle(fontSize: 16)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[800],
+                  backgroundColor: AppTheme.secondaryDark,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -166,7 +167,7 @@ class ServiceDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.secondaryDark)),
           const SizedBox(height: 6),
           Text(content, style: const TextStyle(fontSize: 15)),
         ],

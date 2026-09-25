@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/gov_service_model.dart';
 import 'service_detail_screen.dart';
+import '../../core/theme/app_theme.dart';
 
 class ServicesTab extends StatefulWidget {
   const ServicesTab({super.key});
@@ -192,7 +193,7 @@ class _ServicesTabState extends State<ServicesTab> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Government Guide')),
+      appBar: AppBar(title: const Text('Government Services')),
       body: Column(
         children: [
           Padding(
@@ -220,8 +221,8 @@ class _ServicesTabState extends State<ServicesTab> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Colors.green[100],
-                            child: const Icon(Icons.description, color: Colors.green),
+                            backgroundColor: AppTheme.secondaryLightest,
+                            child: const Icon(Icons.description, color: AppTheme.secondaryColor),
                           ),
                           title: Text(service.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Column(
@@ -233,10 +234,10 @@ class _ServicesTabState extends State<ServicesTab> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: service.onlineApplicable ? Colors.green[50] : Colors.orange[50],
+                                  color: service.onlineApplicable ? AppTheme.secondaryLightest : Colors.orange[50],
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
-                                    color: service.onlineApplicable ? Colors.green[300]! : Colors.orange[300]!,
+                                    color: service.onlineApplicable ? AppTheme.secondaryLight : Colors.orange[300]!,
                                   ),
                                 ),
                                 child: Text(
@@ -244,7 +245,7 @@ class _ServicesTabState extends State<ServicesTab> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: service.onlineApplicable ? Colors.green[800] : Colors.orange[800],
+                                    color: service.onlineApplicable ? AppTheme.secondaryDark : Colors.orange[800],
                                   ),
                                 ),
                               ),

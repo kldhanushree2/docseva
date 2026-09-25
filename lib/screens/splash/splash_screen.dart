@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,14 +36,19 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/logo.png', width: 150, height: 150, errorBuilder: (context, error, stackTrace) => const Icon(Icons.description, size: 100, color: Colors.green)),
+            Image.asset('assets/images/logo.png', width: 150, height: 150, errorBuilder: (context, error, stackTrace) => const Icon(Icons.description, size: 100, color: AppTheme.primaryColor)),
             const SizedBox(height: 20),
-            const Text(
-              'DocSeva',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green),
+            RichText(
+              text: const TextSpan(
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                children: [
+                  TextSpan(text: 'Doc', style: TextStyle(color: AppTheme.primaryColor)),
+                  TextSpan(text: 'Seva', style: TextStyle(color: AppTheme.secondaryColor)),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
-            const Text('Apply Smart. Track Easy. Store Safe.'),
+            Text('Apply smart. Track easy. Store safe.', style: TextStyle(color: Colors.grey[700])),
           ],
         ),
       ),
