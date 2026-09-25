@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:*", "https://docseva-67315.web.app", "https://docseva-67315.firebaseapp.com"],
+    "method": ["GET", "PUT", "POST", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Content-Disposition", "x-goog-resumable"]
+  }
+]
