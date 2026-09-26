@@ -267,7 +267,7 @@ class RemindersScreen extends StatelessWidget {
 
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
-      case 'high': return Colors.red;
+      case 'high': return AppTheme.darkBlue;
       case 'medium': return Colors.orange;
       default: return AppTheme.primaryColor;
     }

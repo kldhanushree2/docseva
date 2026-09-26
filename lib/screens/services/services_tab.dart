@@ -197,6 +197,46 @@ class _ServicesTabState extends State<ServicesTab> {
       body: Column(
         children: [
           Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.description_outlined, color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_allServices.length} SERVICES AVAILABLE',
+                          style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 11, letterSpacing: 0.5, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Browse Government Services',
+                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               decoration: InputDecoration(
@@ -218,7 +258,7 @@ class _ServicesTabState extends State<ServicesTab> {
                     itemBuilder: (context, index) {
                       final service = filteredServices[index];
                       return Card(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: AppTheme.secondaryLightest,

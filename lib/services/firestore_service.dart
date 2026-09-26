@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import '../models/gov_service_model.dart';
 import '../models/application_model.dart';
@@ -61,7 +62,20 @@ class FirestoreService {
     }
   }
 
-  Future<void> deleteVaultDocument(String id) async {
+  /// Deletes a vault entry. [storagePath] is optional — when the entry has
+  /// an actual file in Firebase Storage (i.e. it wasn't saved via the
+  /// offline base64 fallback), that file is removed too so deleting a
+  /// document doesn't leave an orphaned file behind. A missing/already-gone
+  /// Storage object is not treated as a failure — the Firestore record is
+  /// still the source of truth for what the user sees in their vault.
+  Future<void> deleteVaultDocument(String id, {String? storagePath}) async {
+    if (storagePath != null && storagePath.isNotEmpty) {
+      try {
+        await FirebaseStorage.instance.ref(storagePath).delete();
+      } catch (e) {
+        debugPrint('Firebase Storage: could not delete $storagePath (may already be gone): $e');
+      }
+    }
     try {
       await _db.collection('vault').doc(id).delete();
     } catch (e) {

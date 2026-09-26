@@ -201,33 +201,60 @@ class _ProfileTabState extends State<ProfileTab> {
           final address = _localAddress ?? (userData?.address.isNotEmpty == true ? userData!.address : 'Not provided');
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: AppTheme.secondaryLightest,
-                  child: Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 44,
+                        backgroundColor: Colors.white.withOpacity(0.15),
+                        child: Text(
+                          displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                          style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(displayName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 2),
+                      Text(user.email ?? '', style: TextStyle(color: Colors.white.withOpacity(0.75))),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () => _showEditProfileDialog(context, user, userData),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white54),
+                        ),
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Edit Profile'),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(displayName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                Text(user.email ?? '', style: const TextStyle(color: Colors.grey)),
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: () => _showEditProfileDialog(context, user, userData),
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text('Edit Profile'),
+                const SizedBox(height: 20),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Column(
+                      children: [
+                        _buildProfileItem(Icons.phone, 'Phone', phone),
+                        _buildProfileItem(Icons.cake_outlined, 'Date of Birth', dob),
+                        _buildProfileItem(Icons.wc, 'Gender', gender),
+                        _buildProfileItem(Icons.home_outlined, 'Address', address),
+                        _buildProfileItem(Icons.calendar_today, 'Joined', _formatDate(joinedTimestamp), showDivider: false),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 32),
-                _buildProfileItem(Icons.phone, 'Phone', phone),
-                _buildProfileItem(Icons.cake_outlined, 'Date of Birth', dob),
-                _buildProfileItem(Icons.wc, 'Gender', gender),
-                _buildProfileItem(Icons.home_outlined, 'Address', address),
-                _buildProfileItem(Icons.calendar_today, 'Joined', _formatDate(joinedTimestamp)),
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -235,7 +262,7 @@ class _ProfileTabState extends State<ProfileTab> {
                       await context.read<AuthService>().logout();
                       if (context.mounted) Navigator.pushReplacementNamed(context, '/login');
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700], foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.destructiveColor, foregroundColor: Colors.white),
                     child: const Text('Logout'),
                   ),
                 ),
@@ -247,22 +274,34 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  Widget _buildProfileItem(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.secondaryColor),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildProfileItem(IconData icon, String label, String value, {bool showDivider = true}) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
             children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryLightest,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppTheme.secondaryColor, size: 18),
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        ),
+        if (showDivider) const Divider(height: 1),
+      ],
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/app_logger.dart';
+import '../../core/theme/app_theme.dart';
 
 class DebugLogScreen extends StatelessWidget {
   const DebugLogScreen({super.key});
@@ -8,7 +9,7 @@ class DebugLogScreen extends StatelessWidget {
   Color _colorFor(LogLevel level) {
     switch (level) {
       case LogLevel.error:
-        return Colors.red;
+        return AppTheme.errorColor;
       case LogLevel.warn:
         return Colors.orange;
       case LogLevel.info:

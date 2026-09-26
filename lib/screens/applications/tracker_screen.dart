@@ -178,7 +178,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[700],
+                backgroundColor: AppTheme.destructiveColor,
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
@@ -348,7 +348,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  icon: const Icon(Icons.delete_outline, color: AppTheme.destructiveColor),
                                   tooltip: 'Delete Application',
                                   onPressed: () => _confirmDelete(context, app),
                                 ),
@@ -401,8 +401,8 @@ class _TrackerScreenState extends State<TrackerScreen> {
                                 const SizedBox(width: 8),
                                 OutlinedButton.icon(
                                   onPressed: () => _confirmDelete(context, app),
-                                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-                                  label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                  icon: const Icon(Icons.delete, size: 18, color: AppTheme.destructiveColor),
+                                  label: const Text('Delete', style: TextStyle(color: AppTheme.destructiveColor)),
                                 ),
                               ],
                             ),

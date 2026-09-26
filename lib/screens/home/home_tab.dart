@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../../models/application_model.dart';
+import '../../models/vault_model.dart';
 import '../applications/tracker_screen.dart';
 import '../reminders/reminders_screen.dart';
 import 'ai_assistant_screen.dart';
@@ -37,7 +38,7 @@ class HomeTab extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 children: [
                   TextSpan(text: 'Doc', style: TextStyle(color: AppTheme.primaryColor)),
-                  TextSpan(text: 'Seva', style: TextStyle(color: AppTheme.secondaryColor)),
+                  TextSpan(text: 'Seva', style: TextStyle(color: AppTheme.secondaryDark)),
                 ],
               ),
             ),
@@ -54,6 +55,17 @@ class HomeTab extends StatelessWidget {
             icon: const Icon(Icons.notifications_none),
             tooltip: 'Reminders',
           ),
+          GestureDetector(
+            onTap: () => onSelectTab?.call(3),
+            child: const Padding(
+              padding: EdgeInsets.only(right: 16, left: 4),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: AppTheme.primaryColor,
+                child: Icon(Icons.person, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -61,15 +73,23 @@ class HomeTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text('My Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
             FutureBuilder<UserModel?>(
               future: user != null ? context.read<AuthService>().getUserProfile(user.uid) : null,
               builder: (context, snapshot) {
                 String name = snapshot.data?.name ?? user?.email?.split('@').first ?? 'User';
-                return Text('Welcome, $name', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold));
+                return Text('Welcome back, $name', style: TextStyle(fontSize: 14, color: AppTheme.textSecondary));
               },
             ),
+            const SizedBox(height: 2),
+            Text('Manage your government documents easily', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
             const SizedBox(height: 20),
-            _buildActionGrid(context),
+            _buildHighlightCards(context, user?.uid),
+            const SizedBox(height: 24),
+            const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            _buildQuickActionsRow(context),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -89,52 +109,231 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildActionGrid(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
+  // ---------------------------------------------------------------------
+  // TWO-CARD HIGHLIGHT ROW (Applications + Doc Vault)
+  // ---------------------------------------------------------------------
+
+  Widget _buildHighlightCards(BuildContext context, String? userId) {
+    return Row(
       children: [
-        _buildActionCard(context, 'Gov Services', Icons.description, AppTheme.primaryColor, () {
-          if (onSelectTab != null) {
-            onSelectTab!(1);
-          }
-        }),
-        _buildActionCard(context, 'Track Status', Icons.track_changes, Colors.orange, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen()));
-        }),
-        _buildActionCard(context, 'Doc Vault', Icons.lock, AppTheme.secondaryColor, () {
-          if (onSelectTab != null) {
-            onSelectTab!(2);
-          }
-        }),
-        _buildActionCard(context, 'Reminders', Icons.alarm, AppTheme.primaryDark, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
-        }),
+        Expanded(
+          child: userId == null
+              ? _highlightCard(
+                  icon: Icons.assignment_outlined,
+                  badge: '0',
+                  caption: 'APPLICATIONS',
+                  title: 'In Progress',
+                  bgColor: AppTheme.secondaryColor,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
+                )
+              : StreamBuilder<List<ApplicationModel>>(
+                  stream: context.read<FirestoreService>().getApplications(userId),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.length ?? 0;
+                    return _highlightCard(
+                      icon: Icons.assignment_outlined,
+                      badge: '$count',
+                      caption: 'APPLICATIONS',
+                      title: 'In Progress',
+                      bgColor: AppTheme.secondaryColor,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
+                    );
+                  },
+                ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: userId == null
+              ? _highlightCard(
+                  icon: Icons.lock_outline,
+                  badge: '0',
+                  caption: 'DOC VAULT',
+                  title: 'Files Saved',
+                  bgColor: AppTheme.teal,
+                  onTap: () => onSelectTab?.call(2),
+                )
+              : StreamBuilder<List<VaultModel>>(
+                  stream: context.read<FirestoreService>().getVaultDocuments(userId),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.length ?? 0;
+                    return _highlightCard(
+                      icon: Icons.lock_outline,
+                      badge: '$count',
+                      caption: 'DOC VAULT',
+                      title: 'Files Saved',
+                      bgColor: AppTheme.teal,
+                      onTap: () => onSelectTab?.call(2),
+                    );
+                  },
+                ),
+        ),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+  Widget _highlightCard({
+    required IconData icon,
+    required String badge,
+    required String caption,
+    required String title,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
+                ),
+                Text(
+                  badge,
+                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              caption,
+              style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 11, letterSpacing: 0.5, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
     );
   }
+
+  // ---------------------------------------------------------------------
+  // QUICK ACTIONS (3-across icon row)
+  // ---------------------------------------------------------------------
+
+  // Real destinations mapped to the spec's 4-color quick-action scheme
+  // (Services→Blue, Track→Green, Documents→Teal, Guides→Dark Blue). This
+  // app doesn't have a separate "Guides" screen — the Services tab already
+  // *is* the step-by-step government service guide — so the 4th slot here
+  // is Reminders, a real distinct feature, kept in dark blue.
+  Widget _buildQuickActionsRow(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _quickActionCard(
+                context,
+                'Services',
+                Icons.description_outlined,
+                AppTheme.primaryBlue,
+                AppTheme.lightBlue,
+                () {
+                  if (onSelectTab != null) onSelectTab!(1);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _quickActionCard(
+                context,
+                'Track Application',
+                Icons.track_changes,
+                AppTheme.primaryGreen,
+                AppTheme.lightGreen,
+                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _quickActionCard(
+                context,
+                'My Documents',
+                Icons.folder_outlined,
+                AppTheme.teal,
+                AppTheme.lightTeal,
+                () => onSelectTab?.call(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _quickActionCard(
+                context,
+                'Reminders',
+                Icons.alarm,
+                AppTheme.darkBlue,
+                AppTheme.lightBlue,
+                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen())),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _quickActionCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color iconColor,
+    Color bgTint,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: bgTint,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 20, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // RECENT APPLICATIONS
+  // ---------------------------------------------------------------------
 
   Widget _buildRecentApplications(BuildContext context, String? userId) {
     if (userId == null) {
@@ -185,7 +384,7 @@ class HomeTab extends StatelessWidget {
             final app = apps[index];
             return Card(
               child: ListTile(
-                leading: const Icon(Icons.assignment, color: Colors.orange),
+                leading: const Icon(Icons.assignment, color: AppTheme.secondaryDark),
                 title: Text(app.documentName, style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text('App No: ${app.applicationNumber}'),
                 trailing: const Icon(Icons.chevron_right),
