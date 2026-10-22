@@ -11,6 +11,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -35,16 +36,19 @@ class VaultTab extends StatelessWidget {
   // ---------------------------------------------------------------------
 
   Future<void> _pickAndAdd(BuildContext context, String userId, {required bool photo}) async {
-    final result = await FilePicker.platform.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: photo ? ['jpg', 'jpeg', 'png'] : ['pdf'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
+    if (file == null) return;
 
-    final file = result.files.first;
-    final bytes = file.bytes;
-    if (bytes == null) {
+    Uint8List? bytes;
+    try {
+      bytes = await file.readAsBytes();
+    } catch (_) {
+      bytes = null;
+    }
+    if (bytes == null || bytes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not read the selected file. Please try again.')),
@@ -53,7 +57,12 @@ class VaultTab extends StatelessWidget {
       return;
     }
 
-    final ext = (file.extension ?? (photo ? 'jpg' : 'pdf')).toLowerCase();
+    // Take the extension from the file name rather than relying on
+    // PlatformFile.extension, so it works the same on every version.
+    final dotIndex = file.name.lastIndexOf('.');
+    final nameExt = dotIndex != -1 ? file.name.substring(dotIndex + 1) : '';
+    final ext = (nameExt.isNotEmpty ? nameExt : (photo ? 'jpg' : 'pdf')).toLowerCase();
+
     if (context.mounted) {
       _showAddDocumentDialog(
         context,
@@ -66,12 +75,12 @@ class VaultTab extends StatelessWidget {
   }
 
   void _showAddDocumentDialog(
-    BuildContext context,
-    String userId, {
-    required PlatformFile pickedFile,
-    required Uint8List pickedBytes,
-    required String pickedExt,
-  }) {
+      BuildContext context,
+      String userId, {
+        required PlatformFile pickedFile,
+        required Uint8List pickedBytes,
+        required String pickedExt,
+      }) {
     final nameController = TextEditingController(text: pickedFile.name.split('.').first);
     String category = _kCategories.first;
     bool isUploading = false;
@@ -143,110 +152,110 @@ class VaultTab extends StatelessWidget {
                   onPressed: isUploading
                       ? null
                       : () async {
-                          final name = nameController.text.trim();
-                          if (name.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter a Document Name')),
-                            );
-                            return;
-                          }
+                    final name = nameController.text.trim();
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a Document Name')),
+                      );
+                      return;
+                    }
 
-                          setState(() => isUploading = true);
+                    setState(() => isUploading = true);
 
-                          final timestamp = DateTime.now().millisecondsSinceEpoch;
-                          final fileName = pickedFile.name;
-                          final storagePath = 'vault/$userId/${timestamp}_$fileName';
+                    final timestamp = DateTime.now().millisecondsSinceEpoch;
+                    final fileName = pickedFile.name;
+                    final storagePath = 'vault/$userId/${timestamp}_$fileName';
 
-                          String fileUrl = '';
-                          bool uploadedToStorage = false;
+                    String fileUrl = '';
+                    bool uploadedToStorage = false;
 
-                          try {
-                            // 1. UPLOAD ACTUAL BYTES TO FIREBASE STORAGE
-                            final storageRef = FirebaseStorage.instance.ref().child(storagePath);
-                            final metadata = SettableMetadata(
-                              contentType: isPdf ? 'application/pdf' : 'image/${pickedExt == 'png' ? 'png' : 'jpeg'}',
-                            );
+                    try {
+                      // 1. UPLOAD ACTUAL BYTES TO FIREBASE STORAGE
+                      final storageRef = FirebaseStorage.instance.ref().child(storagePath);
+                      final metadata = SettableMetadata(
+                        contentType: isPdf ? 'application/pdf' : 'image/${pickedExt == 'png' ? 'png' : 'jpeg'}',
+                      );
 
-                            // A 25s timeout stops the dialog from spinning
-                            // forever if Firebase Storage is unreachable or
-                            // CORS isn't configured for this origin (see
-                            // storage-cors.json in the project root).
-                            final uploadTask = await storageRef
-                                .putData(pickedBytes, metadata)
-                                .timeout(const Duration(seconds: 25));
-                            fileUrl = await uploadTask.ref
-                                .getDownloadURL()
-                                .timeout(const Duration(seconds: 15));
-                            uploadedToStorage = true;
-                          } catch (e) {
-                            debugPrint('Firebase Storage upload fallback: $e');
-                            // Fallback to a base64 data URI if Storage fails
-                            // or is unreachable, so the document is still
-                            // saved and usable offline.
-                            if (pickedBytes.lengthInBytes < 700000) {
-                              final mimePrefix = isPdf
-                                  ? 'data:application/pdf;base64,'
-                                  : 'data:image/${pickedExt == 'png' ? 'png' : 'jpeg'};base64,';
-                              fileUrl = '$mimePrefix${base64Encode(pickedBytes)}';
-                            } else {
-                              if (dialogContext.mounted) {
-                                setState(() => isUploading = false);
-                              }
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to upload document. Please try again. ($e)')),
-                                );
-                              }
-                              return;
-                            }
-                          }
-
-                          final doc = VaultModel(
-                            id: '',
-                            userId: userId,
-                            documentName: name,
-                            category: category,
-                            fileUrl: fileUrl,
-                            // Only record a storagePath when a Storage
-                            // object genuinely exists, so Copy/Delete never
-                            // try to hit a path nothing was ever written to.
-                            storagePath: uploadedToStorage ? storagePath : '',
-                            fileType: isPdf ? 'PDF Document' : 'Image',
-                            uploadedDate: timestamp,
+                      // A 25s timeout stops the dialog from spinning
+                      // forever if Firebase Storage is unreachable or
+                      // CORS isn't configured for this origin (see
+                      // storage-cors.json in the project root).
+                      final uploadTask = await storageRef
+                          .putData(pickedBytes, metadata)
+                          .timeout(const Duration(seconds: 25));
+                      fileUrl = await uploadTask.ref
+                          .getDownloadURL()
+                          .timeout(const Duration(seconds: 15));
+                      uploadedToStorage = true;
+                    } catch (e) {
+                      debugPrint('Firebase Storage upload fallback: $e');
+                      // Fallback to a base64 data URI if Storage fails
+                      // or is unreachable, so the document is still
+                      // saved and usable offline.
+                      if (pickedBytes.lengthInBytes < 700000) {
+                        final mimePrefix = isPdf
+                            ? 'data:application/pdf;base64,'
+                            : 'data:image/${pickedExt == 'png' ? 'png' : 'jpeg'};base64,';
+                        fileUrl = '$mimePrefix${base64Encode(pickedBytes)}';
+                      } else {
+                        if (dialogContext.mounted) {
+                          setState(() => isUploading = false);
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to upload document. Please try again. ($e)')),
                           );
+                        }
+                        return;
+                      }
+                    }
 
-                          try {
-                            // 2. SAVE VAULT RECORD TO FIRESTORE
-                            await context.read<FirestoreService>().addVaultDocument(doc);
+                    final doc = VaultModel(
+                      id: '',
+                      userId: userId,
+                      documentName: name,
+                      category: category,
+                      fileUrl: fileUrl,
+                      // Only record a storagePath when a Storage
+                      // object genuinely exists, so Share/Delete never
+                      // try to hit a path nothing was ever written to.
+                      storagePath: uploadedToStorage ? storagePath : '',
+                      fileType: isPdf ? 'PDF Document' : 'Image',
+                      uploadedDate: timestamp,
+                    );
 
-                            // 3. AUTOMATICALLY CLOSE DIALOG ON SUCCESS
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
+                    try {
+                      // 2. SAVE VAULT RECORD TO FIRESTORE
+                      await context.read<FirestoreService>().addVaultDocument(doc);
 
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Document uploaded successfully!')),
-                              );
-                            }
-                          } catch (e) {
-                            // KEEP DIALOG OPEN ON FAILURE & PERMIT RETRY
-                            if (dialogContext.mounted) {
-                              setState(() => isUploading = false);
-                            }
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Failed to save document. Please try again. ($e)')),
-                              );
-                            }
-                          }
-                        },
+                      // 3. AUTOMATICALLY CLOSE DIALOG ON SUCCESS
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Document uploaded successfully!')),
+                        );
+                      }
+                    } catch (e) {
+                      // KEEP DIALOG OPEN ON FAILURE & PERMIT RETRY
+                      if (dialogContext.mounted) {
+                        setState(() => isUploading = false);
+                      }
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to save document. Please try again. ($e)')),
+                        );
+                      }
+                    }
+                  },
                   child: isUploading
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
                       : const Text('Upload Document'),
                 ),
               ],
@@ -319,7 +328,7 @@ class VaultTab extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------
-  // COPY DOCUMENT
+  // COPY / SHARE DOCUMENT
   // ---------------------------------------------------------------------
 
   /// Resolves the raw bytes for a vault entry without relying on a plain
@@ -337,6 +346,8 @@ class VaultTab extends StatelessWidget {
     return null;
   }
 
+  /// Web-only "copy": hands the file to the browser. On mobile the menu uses
+  /// _shareDocument instead, but this stays as the web fallback.
   Future<void> _copyDocument(BuildContext context, VaultModel doc) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(const SnackBar(content: Text('Preparing a copy...'), duration: Duration(seconds: 2)));
@@ -402,6 +413,45 @@ class VaultTab extends StatelessWidget {
     }
   }
 
+  /// Opens the phone's share sheet so the document can be saved to Drive or
+  /// Files, or sent through WhatsApp, email, etc.
+  Future<void> _shareDocument(BuildContext context, VaultModel doc) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (kIsWeb) {
+      await _copyDocument(context, doc);
+      return;
+    }
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Preparing file...'), duration: Duration(seconds: 2)),
+    );
+
+    try {
+      final bytes = await _resolveBytes(doc);
+      if (bytes == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not read this document to share it.')),
+        );
+        return;
+      }
+
+      final dir = await getTemporaryDirectory();
+      final safeName = doc.documentName.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '_');
+      final file = File('${dir.path}/$safeName.${doc.fileExtension}');
+      await file.writeAsBytes(bytes);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: doc.mimeType)],
+          text: doc.documentName,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Failed to share document: $e')));
+    }
+  }
+
   // ---------------------------------------------------------------------
   // DELETE DOCUMENT
   // ---------------------------------------------------------------------
@@ -426,9 +476,9 @@ class VaultTab extends StatelessWidget {
               Navigator.pop(dialogContext);
               try {
                 await context.read<FirestoreService>().deleteVaultDocument(
-                      doc.id,
-                      storagePath: doc.storagePath,
-                    );
+                  doc.id,
+                  storagePath: doc.storagePath,
+                );
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Document deleted from Vault.')),
@@ -490,30 +540,30 @@ class VaultTab extends StatelessWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   leading: isBase64Image
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.memory(
-                            base64Decode(doc.fileUrl.split(',').last),
-                            width: 44,
-                            height: 48,
-                            fit: BoxFit.cover,
-                          ),
-                        )
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.memory(
+                      base64Decode(doc.fileUrl.split(',').last),
+                      width: 44,
+                      height: 48,
+                      fit: BoxFit.cover,
+                    ),
+                  )
                       : doc.isImage && doc.isNetworkUrl
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.network(
-                                doc.fileUrl,
-                                width: 44,
-                                height: 48,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.image, color: AppTheme.primaryColor, size: 36),
-                              ),
-                            )
-                          : Icon(
-                              doc.isPdf ? Icons.picture_as_pdf : Icons.image,
-                              color: doc.isPdf ? AppTheme.teal : AppTheme.secondaryColor,
-                              size: 36,
-                            ),
+                      ? ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      doc.fileUrl,
+                      width: 44,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: AppTheme.primaryColor, size: 36),
+                    ),
+                  )
+                      : Icon(
+                    doc.isPdf ? Icons.picture_as_pdf : Icons.image,
+                    color: doc.isPdf ? AppTheme.teal : AppTheme.secondaryColor,
+                    size: 36,
+                  ),
                   title: Text(doc.documentName, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(
                     '${doc.category} • ${doc.fileType} • ${DateFormat('dd MMM yyyy').format(DateTime.fromMillisecondsSinceEpoch(doc.uploadedDate))}',
@@ -527,8 +577,8 @@ class VaultTab extends StatelessWidget {
                         case 'view':
                           _openDocumentViewer(context, doc);
                           break;
-                        case 'copy':
-                          _copyDocument(context, doc);
+                        case 'share':
+                          _shareDocument(context, doc);
                           break;
                         case 'delete':
                           _confirmDelete(context, doc);
@@ -541,8 +591,8 @@ class VaultTab extends StatelessWidget {
                         child: ListTile(leading: Icon(Icons.remove_red_eye, color: AppTheme.secondaryColor), title: Text('View')),
                       ),
                       PopupMenuItem(
-                        value: 'copy',
-                        child: ListTile(leading: Icon(Icons.copy, color: AppTheme.primaryColor), title: Text('Copy')),
+                        value: 'share',
+                        child: ListTile(leading: Icon(Icons.share, color: AppTheme.primaryColor), title: Text('Share / Save')),
                       ),
                       PopupMenuItem(
                         value: 'delete',
@@ -771,92 +821,92 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       ),
       body: hasError
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.picture_as_pdf_outlined, size: 64, color: AppTheme.errorColor),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      _renderFailed
-                          ? 'This PDF could not be rendered in-app'
-                              '${_renderFailedReason != null ? ' ($_renderFailedReason)' : ''}. '
-                              'Try opening it directly instead.'
-                          : 'Unable to open this PDF. Please check that the file is available.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: _openingExternally ? null : _openExternally,
-                    icon: _openingExternally
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.open_in_new, size: 18),
-                    label: const Text('Open Directly Instead'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Back / Close'),
-                  ),
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.picture_as_pdf_outlined, size: 64, color: AppTheme.errorColor),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                _renderFailed
+                    ? 'This PDF could not be rendered in-app'
+                    '${_renderFailedReason != null ? ' ($_renderFailedReason)' : ''}. '
+                    'Try opening it directly instead.'
+                    : 'Unable to open this PDF. Please check that the file is available.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
-            )
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _openingExternally ? null : _openExternally,
+              icon: _openingExternally
+                  ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : const Icon(Icons.open_in_new, size: 18),
+              label: const Text('Open Directly Instead'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Back / Close'),
+            ),
+          ],
+        ),
+      )
           : _networkUrl != null
-              ? SizedBox.expand(
-                  key: ValueKey('network-$_networkUrl'),
-                  child: SfPdfViewer.network(
-                    _networkUrl!,
-                    canShowScrollHead: true,
-                    canShowScrollStatus: true,
-                    onDocumentLoadFailed: (details) {
-                      debugPrint('SfPdfViewer network load warning: ${details.description}');
-                      if (mounted) {
-                        setState(() {
-                          _renderFailed = true;
-                          _renderFailedReason = details.description;
-                        });
-                      }
-                    },
-                  ),
-                )
-              : _pdfBytes != null
-                  ? SizedBox.expand(
-                      key: ValueKey('memory-${doc.id}'),
-                      child: SfPdfViewer.memory(
-                        _pdfBytes!,
-                        canShowScrollHead: true,
-                        canShowScrollStatus: true,
-                        onDocumentLoadFailed: (details) {
-                          debugPrint('SfPdfViewer memory load warning: ${details.description}');
-                          if (mounted) {
-                            setState(() {
-                              _renderFailed = true;
-                              _renderFailedReason = details.description;
-                            });
-                          }
-                        },
-                      ),
-                    )
-                  : Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('Unable to open this PDF. Please check that the file is available.'),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Back / Close'),
-                          ),
-                        ],
-                      ),
-                    ),
+          ? SizedBox.expand(
+        key: ValueKey('network-$_networkUrl'),
+        child: SfPdfViewer.network(
+          _networkUrl!,
+          canShowScrollHead: true,
+          canShowScrollStatus: true,
+          onDocumentLoadFailed: (details) {
+            debugPrint('SfPdfViewer network load warning: ${details.description}');
+            if (mounted) {
+              setState(() {
+                _renderFailed = true;
+                _renderFailedReason = details.description;
+              });
+            }
+          },
+        ),
+      )
+          : _pdfBytes != null
+          ? SizedBox.expand(
+        key: ValueKey('memory-${doc.id}'),
+        child: SfPdfViewer.memory(
+          _pdfBytes!,
+          canShowScrollHead: true,
+          canShowScrollStatus: true,
+          onDocumentLoadFailed: (details) {
+            debugPrint('SfPdfViewer memory load warning: ${details.description}');
+            if (mounted) {
+              setState(() {
+                _renderFailed = true;
+                _renderFailedReason = details.description;
+              });
+            }
+          },
+        ),
+      )
+          : Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Unable to open this PDF. Please check that the file is available.'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Back / Close'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

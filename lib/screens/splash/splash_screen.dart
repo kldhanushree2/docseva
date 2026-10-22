@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -18,15 +17,21 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _navigate() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    final minSplash = Future.delayed(const Duration(milliseconds: 1500));
 
-    final user = context.read<User?>();
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      Navigator.pushReplacementNamed(context, '/login');
+    User? user;
+    try {
+      user = await FirebaseAuth.instance
+          .authStateChanges()
+          .first
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      user = FirebaseAuth.instance.currentUser;
     }
+
+    await minSplash;
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, user != null ? '/home' : '/login');
   }
 
   @override

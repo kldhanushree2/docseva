@@ -19,6 +19,7 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<User?>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -30,15 +31,19 @@ class HomeTab extends StatelessWidget {
               width: 28,
               height: 28,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.description, size: 24, color: AppTheme.primaryColor),
+              const Icon(Icons.description, size: 24, color: AppTheme.primaryColor),
             ),
             const SizedBox(width: 8),
             RichText(
-              text: const TextSpan(
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              text: TextSpan(
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 children: [
-                  TextSpan(text: 'Doc', style: TextStyle(color: AppTheme.primaryColor)),
-                  TextSpan(text: 'Seva', style: TextStyle(color: AppTheme.secondaryDark)),
+                  const TextSpan(text: 'Doc', style: TextStyle(color: AppTheme.primaryColor)),
+                  TextSpan(
+                    text: 'Seva',
+                    // The darker green is hard to read on a dark background.
+                    style: TextStyle(color: isDark ? AppTheme.secondaryColor : AppTheme.secondaryDark),
+                  ),
                 ],
               ),
             ),
@@ -119,53 +124,53 @@ class HomeTab extends StatelessWidget {
         Expanded(
           child: userId == null
               ? _highlightCard(
-                  icon: Icons.assignment_outlined,
-                  badge: '0',
-                  caption: 'APPLICATIONS',
-                  title: 'In Progress',
-                  bgColor: AppTheme.secondaryColor,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
-                )
+            icon: Icons.assignment_outlined,
+            badge: '0',
+            caption: 'APPLICATIONS',
+            title: 'In Progress',
+            bgColor: AppTheme.secondaryColor,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
+          )
               : StreamBuilder<List<ApplicationModel>>(
-                  stream: context.read<FirestoreService>().getApplications(userId),
-                  builder: (context, snapshot) {
-                    final count = snapshot.data?.length ?? 0;
-                    return _highlightCard(
-                      icon: Icons.assignment_outlined,
-                      badge: '$count',
-                      caption: 'APPLICATIONS',
-                      title: 'In Progress',
-                      bgColor: AppTheme.secondaryColor,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
-                    );
-                  },
-                ),
+            stream: context.read<FirestoreService>().getApplications(userId),
+            builder: (context, snapshot) {
+              final count = snapshot.data?.length ?? 0;
+              return _highlightCard(
+                icon: Icons.assignment_outlined,
+                badge: '$count',
+                caption: 'APPLICATIONS',
+                title: 'In Progress',
+                bgColor: AppTheme.secondaryColor,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
+              );
+            },
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: userId == null
               ? _highlightCard(
-                  icon: Icons.lock_outline,
-                  badge: '0',
-                  caption: 'DOC VAULT',
-                  title: 'Files Saved',
-                  bgColor: AppTheme.teal,
-                  onTap: () => onSelectTab?.call(2),
-                )
+            icon: Icons.lock_outline,
+            badge: '0',
+            caption: 'DOC VAULT',
+            title: 'Files Saved',
+            bgColor: AppTheme.teal,
+            onTap: () => onSelectTab?.call(2),
+          )
               : StreamBuilder<List<VaultModel>>(
-                  stream: context.read<FirestoreService>().getVaultDocuments(userId),
-                  builder: (context, snapshot) {
-                    final count = snapshot.data?.length ?? 0;
-                    return _highlightCard(
-                      icon: Icons.lock_outline,
-                      badge: '$count',
-                      caption: 'DOC VAULT',
-                      title: 'Files Saved',
-                      bgColor: AppTheme.teal,
-                      onTap: () => onSelectTab?.call(2),
-                    );
-                  },
-                ),
+            stream: context.read<FirestoreService>().getVaultDocuments(userId),
+            builder: (context, snapshot) {
+              final count = snapshot.data?.length ?? 0;
+              return _highlightCard(
+                icon: Icons.lock_outline,
+                badge: '$count',
+                caption: 'DOC VAULT',
+                title: 'Files Saved',
+                bgColor: AppTheme.teal,
+                onTap: () => onSelectTab?.call(2),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -225,7 +230,7 @@ class HomeTab extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------
-  // QUICK ACTIONS (3-across icon row)
+  // QUICK ACTIONS (2x2 grid)
   // ---------------------------------------------------------------------
 
   // Real destinations mapped to the spec's 4-color quick-action scheme
@@ -245,7 +250,7 @@ class HomeTab extends StatelessWidget {
                 Icons.description_outlined,
                 AppTheme.primaryBlue,
                 AppTheme.lightBlue,
-                () {
+                    () {
                   if (onSelectTab != null) onSelectTab!(1);
                 },
               ),
@@ -258,7 +263,7 @@ class HomeTab extends StatelessWidget {
                 Icons.track_changes,
                 AppTheme.primaryGreen,
                 AppTheme.lightGreen,
-                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackerScreen())),
               ),
             ),
           ],
@@ -273,7 +278,7 @@ class HomeTab extends StatelessWidget {
                 Icons.folder_outlined,
                 AppTheme.teal,
                 AppTheme.lightTeal,
-                () => onSelectTab?.call(2),
+                    () => onSelectTab?.call(2),
               ),
             ),
             const SizedBox(width: 12),
@@ -284,7 +289,7 @@ class HomeTab extends StatelessWidget {
                 Icons.alarm,
                 AppTheme.darkBlue,
                 AppTheme.lightBlue,
-                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen())),
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen())),
               ),
             ),
           ],
@@ -294,13 +299,15 @@ class HomeTab extends StatelessWidget {
   }
 
   Widget _quickActionCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color iconColor,
-    Color bgTint,
-    VoidCallback onTap,
-  ) {
+      BuildContext context,
+      String title,
+      IconData icon,
+      Color iconColor,
+      Color bgTint,
+      VoidCallback onTap,
+      ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -321,7 +328,13 @@ class HomeTab extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    // The fixed dark navy is invisible on a dark card, so
+                    // dark mode uses the theme's own text colour.
+                    color: isDark ? Theme.of(context).colorScheme.onSurface : AppTheme.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -336,6 +349,8 @@ class HomeTab extends StatelessWidget {
   // ---------------------------------------------------------------------
 
   Widget _buildRecentApplications(BuildContext context, String? userId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (userId == null) {
       return const Card(
         child: Padding(
@@ -384,7 +399,10 @@ class HomeTab extends StatelessWidget {
             final app = apps[index];
             return Card(
               child: ListTile(
-                leading: const Icon(Icons.assignment, color: AppTheme.secondaryDark),
+                leading: Icon(
+                  Icons.assignment,
+                  color: isDark ? AppTheme.secondaryColor : AppTheme.secondaryDark,
+                ),
                 title: Text(app.documentName, style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text('App No: ${app.applicationNumber}'),
                 trailing: const Icon(Icons.chevron_right),

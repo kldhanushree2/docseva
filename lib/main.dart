@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -24,32 +26,66 @@ void main() async {
   if (!kIsWeb) {
     await NotificationService.instance.init();
   }
-  runApp(const DocSevaApp());
+
+  // Load the saved Light / Dark / System choice before the first frame so
+  // the app never flashes the wrong theme.
+  final themeProvider = ThemeProvider();
+  await themeProvider.load();
+
+  runApp(DocSevaApp(themeProvider: themeProvider));
 }
 
 class DocSevaApp extends StatelessWidget {
-  const DocSevaApp({super.key});
+  final ThemeProvider themeProvider;
+
+  const DocSevaApp({super.key, required this.themeProvider});
+
+  /// Dark version of the app theme, built from the same brand colour as the
+  /// light theme. If your light theme uses a different font, change the
+  /// text theme line below to match.
+  ThemeData _buildDarkTheme() {
+    final base = ThemeData(
+      brightness: Brightness.dark,
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppTheme.primaryColor,
+        brightness: Brightness.dark,
+      ),
+    );
+    return base.copyWith(
+      textTheme: GoogleFonts.poppinsTextTheme(base.textTheme),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         Provider<AuthService>(create: (_) => AuthService()),
         Provider<FirestoreService>(create: (_) => FirestoreService()),
-        StreamProvider(
+        // Start from the saved Firebase user so screens never briefly think
+        // the user is logged out while the session loads.
+        StreamProvider<User?>(
           create: (context) => context.read<AuthService>().user,
-          initialData: null,
+          initialData: FirebaseAuth.instance.currentUser,
         ),
       ],
-      child: MaterialApp(
-        title: 'DocSeva',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const MainScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, theme, _) {
+          return MaterialApp(
+            title: 'DocSeva',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: _buildDarkTheme(),
+            themeMode: theme.mode,
+            home: const SplashScreen(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/home': (context) => const MainScreen(),
+            },
+          );
         },
       ),
     );

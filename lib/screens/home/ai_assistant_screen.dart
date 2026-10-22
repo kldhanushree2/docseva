@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../services/ai_service.dart';
 import '../../models/chat_message_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,6 +28,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
       type: ChatMessage.typeAI,
       timestamp: DateTime.now().millisecondsSinceEpoch,
     ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _sendMessage(String text) async {
@@ -88,6 +94,9 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -98,7 +107,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
               width: 28,
               height: 28,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.smart_toy_outlined, size: 24, color: AppTheme.primaryColor),
+              const Icon(Icons.smart_toy_outlined, size: 24, color: AppTheme.primaryColor),
             ),
             const SizedBox(width: 8),
             const Text('AI Assistant'),
@@ -115,13 +124,24 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
               itemBuilder: (context, index) {
                 final msg = _messages[index];
                 final isAI = msg.type == ChatMessage.typeAI;
+
+                // Light mode keeps the original colours. Dark mode uses
+                // theme colours so the text is always readable.
+                final Color bubbleColor = isAI
+                    ? (isDark ? scheme.surfaceContainerHighest : Colors.grey[200]!)
+                    : (isDark ? scheme.primaryContainer : AppTheme.secondaryLightest);
+                final Color? textColor = isDark
+                    ? (isAI ? scheme.onSurface : scheme.onPrimaryContainer)
+                    : null;
+                final Color badgeColor = isDark ? scheme.onSurfaceVariant : Colors.grey[600]!;
+
                 return Align(
                   alignment: isAI ? Alignment.centerLeft : Alignment.centerRight,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isAI ? Colors.grey[200] : AppTheme.secondaryLightest,
+                      color: bubbleColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
@@ -129,11 +149,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(msg.message),
+                        Text(msg.message, style: TextStyle(color: textColor)),
                         // Transparency badge: tells the user honestly whether
                         // this answer came from the live Gemini API or the
-                        // offline built-in guide, instead of both looking
-                        // identical.
+                        // offline built-in guide.
                         if (isAI && msg.isLive != null) ...[
                           const SizedBox(height: 6),
                           Row(
@@ -142,7 +161,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                               Icon(
                                 msg.isLive! ? Icons.bolt : Icons.menu_book,
                                 size: 12,
-                                color: msg.isLive! ? AppTheme.secondaryDark : Colors.grey[600],
+                                color: msg.isLive! ? (isDark ? scheme.primary : AppTheme.secondaryDark) : badgeColor,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -150,7 +169,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontStyle: FontStyle.italic,
-                                  color: msg.isLive! ? AppTheme.secondaryDark : Colors.grey[600],
+                                  color: msg.isLive! ? (isDark ? scheme.primary : AppTheme.secondaryDark) : badgeColor,
                                 ),
                               ),
                             ],
@@ -164,9 +183,15 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
             ),
           ),
           if (_isTyping)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Align(alignment: Alignment.centerLeft, child: Text('AI is typing...', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'AI is typing...',
+                  style: TextStyle(fontStyle: FontStyle.italic, color: scheme.onSurfaceVariant),
+                ),
+              ),
             ),
           Padding(
             padding: const EdgeInsets.all(8.0),
