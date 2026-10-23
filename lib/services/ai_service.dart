@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -15,7 +16,7 @@ class AIResponse {
 class AIService {
   // TODO: paste your key between the quotes. Never share this file with the
   // key in it, and never upload it to GitHub.
-  final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+  final _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
   // Tried in order. Re-check https://ai.google.dev/gemini-api/docs/models
   // from time to time because model names change.
   static const List<String> _modelsToTry = [

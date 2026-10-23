@@ -12,22 +12,20 @@ import 'screens/splash/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/main_screen.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load the API key from .env before anything else uses it.
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
-}
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // Notification scheduling isn't supported on Flutter Web — only
+  // Notification scheduling isn't supported on Flutter Web, so only
   // initialize on real Android/iOS builds.
   if (!kIsWeb) {
     await NotificationService.instance.init();
@@ -40,7 +38,6 @@ void main() async {
 
   runApp(DocSevaApp(themeProvider: themeProvider));
 }
-
 class DocSevaApp extends StatelessWidget {
   final ThemeProvider themeProvider;
 
