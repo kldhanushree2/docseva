@@ -15,7 +15,7 @@ class AIResponse {
 class AIService {
   // TODO: paste your key between the quotes. Never share this file with the
   // key in it, and never upload it to GitHub.
-  static const apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
   // Tried in order. Re-check https://ai.google.dev/gemini-api/docs/models
   // from time to time because model names change.
   static const List<String> _modelsToTry = [
